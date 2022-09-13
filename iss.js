@@ -24,7 +24,7 @@ const fetchCoordsByIP = function(ip, callback) {
       callback(err, null);
       return;
     }
-    if (request.statusCode !== 200) {
+    if (response.statusCode !== 200) {
       const msg = `Status Code ${response.statusCode} when fetching Coords. Response: ${body}`;
       callback(msg, null);
       return;
@@ -47,7 +47,7 @@ const fetchISSFlyOverTimes = function(coords, callback) {
       callback(err, null);
       return;
     }
-    if (request.statusCode !== 200) {
+    if (response.statusCode !== 200) {
       const msg = `Status Code ${response.statusCode} when fetching ISS flyover times. Response: ${body}`;
       callback(msg, null);
       return;
@@ -61,4 +61,28 @@ const fetchISSFlyOverTimes = function(coords, callback) {
   });
 };
 
-module.exports = { fetchMyIP, fetchCoordsByIP, fetchISSFlyOverTimes };
+
+const nextISSTimesForMyLocation = function(callback) {
+  fetchMyIP((error, IP) => { // First getting IP address
+    if (error) {
+      callback(error, null); // if error return to callback
+      return;
+    }
+    fetchCoordsByIP(IP, (error, coordinates) => {  // if successful send to the next call back (lvl 2)
+      if (error) {
+        callback(error, null);
+        return;
+      }
+      fetchISSFlyOverTimes(coordinates, (error, response) => { // if succesful send to final callback (lvl 3)
+        if (error) {
+          callback(error, null);
+          return;
+        }
+        callback(error, response);
+        return;
+      });
+    });
+  });
+};
+
+module.exports = { fetchMyIP, fetchCoordsByIP, fetchISSFlyOverTimes, nextISSTimesForMyLocation };
